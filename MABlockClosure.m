@@ -1,14 +1,49 @@
 
 #import "MABlockClosure.h"
 
+#import <assert.h>
 #import <sys/mman.h>
 
 
 @implementation MABlockClosure
 
+struct BlockDescriptor
+{
+    unsigned long reserved;
+    unsigned long size;
+    void *rest[1];
+};
+
+struct Block
+{
+    void *isa;
+    int flags;
+    int reserved;
+    void *invoke;
+    struct BlockDescriptor *descriptor;
+};
+    
+
 static void *BlockImpl(id block)
 {
     return ((void **)block)[2];
+}
+
+static const char *BlockSig(id blockObj)
+{
+    struct Block *block = (void *)blockObj;
+    struct BlockDescriptor *descriptor = block->descriptor;
+    
+    int copyDisposeFlag = 1 << 25;
+    int signatureFlag = 1 << 30;
+    
+    assert(block->flags & signatureFlag);
+    
+    int index = 0;
+    if(block->flags & copyDisposeFlag)
+        index += 2;
+    
+    return descriptor->rest[index];
 }
 
 static void BlockClosure(ffi_cif *cif, void *ret, void **args, void *userdata)
@@ -87,6 +122,7 @@ static void DeallocateClosure(void *closure)
 {
     if((self = [self init]))
     {
+        NSLog(@"%s", BlockSig(block));
         _allocations = [[NSMutableArray alloc] init];
         _block = block;
         _closure = AllocateClosure();
