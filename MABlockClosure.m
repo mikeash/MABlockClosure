@@ -51,8 +51,12 @@ static void BlockClosure(ffi_cif *cif, void *ret, void **args, void *userdata)
 {
     MABlockClosure *self = userdata;
     
-    void *innerargs[] = { &self->_block, args[0] };
-    ffi_call(&self->_innerCIF, BlockImpl(self->_block), ret, innerargs);
+    int count = self->_closureArgCount;
+    void **innerArgs = malloc((count + 1) * sizeof(*innerArgs));
+    innerArgs[0] = &self->_block;
+    memcpy(innerArgs + 1, args, count * sizeof(*args));
+    ffi_call(&self->_innerCIF, BlockImpl(self->_block), ret, innerArgs);
+    free(innerArgs);
 }
 
 static void *AllocateClosure(void)
@@ -215,7 +219,7 @@ static int ArgCount(const char *str)
     return argTypes;
 }
 
-- (void)_prepCIF: (ffi_cif *)cif withEncodeString: (const char *)str skipArg: (BOOL)skip
+- (int)_prepCIF: (ffi_cif *)cif withEncodeString: (const char *)str skipArg: (BOOL)skip
 {
     int argCount;
     ffi_type **argTypes = [self _argsWithEncodeString: str getCount: &argCount];
@@ -232,11 +236,13 @@ static int ArgCount(const char *str)
         NSLog(@"Got result %ld from ffi_prep_cif", (long)status);
         abort();
     }
+    
+    return argCount;
 }
 
 - (void)_prepClosureCIF
 {
-    [self _prepCIF: &_closureCIF withEncodeString: BlockSig(_block) skipArg: YES];
+    _closureArgCount = [self _prepCIF: &_closureCIF withEncodeString: BlockSig(_block) skipArg: YES];
 }
 
 - (void)_prepInnerCIF

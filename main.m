@@ -31,4 +31,9 @@ int main(int argc, char **argv)
     NSString *strObj = ((id (*)(id))BlockFptr(block))(@"hello");
     NSLog(@"%@", strObj);
     [block release];
+    
+    block = ^(int x, int y) { return x + y; };
+    closure = [[MABlockClosure alloc] initWithBlock: block];
+    ret = ((int (*)(int, int))[closure fptr])(5, 10);
+    NSLog(@"%d", ret);
 }

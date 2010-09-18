@@ -8,6 +8,7 @@
     NSMutableArray *_allocations;
     ffi_cif _closureCIF;
     ffi_cif _innerCIF;
+    int _closureArgCount;
     void *_closure;
     id _block;
 }
