@@ -41,4 +41,7 @@ int main(int argc, char **argv)
     closure = [[MABlockClosure alloc] initWithBlock: block];
     ((void (*)(void))[closure fptr])();
     [closure release];
+    
+    void (*fptr)(void) = BlockFptrAuto(^{ NSLog(@"Hello 2"); });
+    fptr();
 }

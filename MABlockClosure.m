@@ -311,3 +311,8 @@ void *BlockFptr(id block)
         return [closure fptr];
     }
 }
+
+void *BlockFptrAuto(id block)
+{
+    return BlockFptr([[block copy] autorelease]);
+}
