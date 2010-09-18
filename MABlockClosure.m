@@ -132,10 +132,10 @@ static ffi_type *FFIArgForEncode(const char *str)
     abort();
 }
 
-- (void)_prepCIF: (ffi_cif *)cif withEncodeString: (const char *)str
+- (ffi_type **)_argsWithEncodeString: (const char *)str getCount: (int *)outCount
 {
-    int argcount = ArgCount(str);
-    ffi_type **argTypes = [self _allocate: argcount * sizeof(*argTypes)];
+    int argCount = ArgCount(str);
+    ffi_type **argTypes = [self _allocate: argCount * sizeof(*argTypes)];
     
     int i = -1;
     while(str && *str)
@@ -147,7 +147,23 @@ static ffi_type *FFIArgForEncode(const char *str)
         str = next;
     }
     
-    ffi_status status = ffi_prep_cif(&_innerCIF, FFI_DEFAULT_ABI, 2, &ffi_type_sint32, argTypes);
+    *outCount = argCount;
+    
+    return argTypes;
+}
+
+- (void)_prepCIF: (ffi_cif *)cif withEncodeString: (const char *)str skipArg: (BOOL)skip
+{
+    int argCount;
+    ffi_type **argTypes = [self _argsWithEncodeString: str getCount: &argCount];
+    
+    if(skip)
+    {
+        argTypes++;
+        argCount--;
+    }
+    
+    ffi_status status = ffi_prep_cif(cif, FFI_DEFAULT_ABI, argCount, FFIArgForEncode(str), argTypes);
     if(status != FFI_OK)
     {
         NSLog(@"Got result %ld from ffi_prep_cif", (long)status);
@@ -157,19 +173,12 @@ static ffi_type *FFIArgForEncode(const char *str)
 
 - (void)_prepClosureCIF
 {
-    ffi_type **argTypes = [self _allocate: sizeof(*argTypes)];
-    argTypes[0] = &ffi_type_sint32;
-    ffi_status status = ffi_prep_cif(&_closureCIF, FFI_DEFAULT_ABI, 1, &ffi_type_sint32, argTypes);
-    if(status != FFI_OK)
-    {
-        NSLog(@"Got result %ld from ffi_prep_cif", (long)status);
-        abort();
-    }
+    [self _prepCIF: &_closureCIF withEncodeString: BlockSig(_block) skipArg: YES];
 }
 
 - (void)_prepInnerCIF
 {
-    [self _prepCIF: &_innerCIF withEncodeString: BlockSig(_block)];
+    [self _prepCIF: &_innerCIF withEncodeString: BlockSig(_block) skipArg: NO];
 }
 
 - (void)_prepClosure
