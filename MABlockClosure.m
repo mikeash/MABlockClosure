@@ -77,6 +77,84 @@ static void DeallocateClosure(void *closure)
     return [data mutableBytes];
 }
 
+static const char *SizeAndAlignment(const char *str, NSUInteger *sizep, NSUInteger *alignp, int *len)
+{
+    const char *out = NSGetSizeAndAlignment(str, sizep, alignp);
+    if(len)
+        *len = out - str;
+    while(isdigit(*out))
+        out++;
+    return out;
+}
+
+static int ArgCount(const char *str)
+{
+    int argcount = -1; // return type is the first one
+    while(str && *str)
+    {
+        str = SizeAndAlignment(str, NULL, NULL, NULL);
+        argcount++;
+    }
+    return argcount;
+}
+
+static ffi_type *FFIArgForEncode(const char *str)
+{
+    #define SINT(type) do { \
+    	if(str[0] == @encode(type)[0]) \
+    	{ \
+    	   if(sizeof(type) == 1) \
+    	       return &ffi_type_sint8; \
+    	   else if(sizeof(type) == 2) \
+    	       return &ffi_type_sint16; \
+    	   else if(sizeof(type) == 4) \
+    	       return &ffi_type_sint32; \
+    	   else if(sizeof(type) == 8) \
+    	       return &ffi_type_sint64; \
+    	   else \
+    	   { \
+    	       NSLog(@"Unknown size for type %s", #type); \
+    	       abort(); \
+    	   } \
+        } \
+    } while(0)
+    
+    #define PTR(type) do { \
+        if(str[0] == @encode(type)[0]) \
+            return &ffi_type_pointer; \
+    } while(0)
+    
+    SINT(int);
+    
+    PTR(id);
+    
+    NSLog(@"Unknown encode string %s", str);
+    abort();
+}
+
+- (void)_prepCIF: (ffi_cif *)cif withEncodeString: (const char *)str
+{
+    int argcount = ArgCount(str);
+    ffi_type **argTypes = [self _allocate: argcount * sizeof(*argTypes)];
+    
+    int i = -1;
+    while(str && *str)
+    {
+        const char *next = SizeAndAlignment(str, NULL, NULL, NULL);
+        if(i >= 0)
+            argTypes[i] = FFIArgForEncode(str);
+        i++;
+        str = next;
+    }
+    
+    ffi_status status = ffi_prep_cif(&_innerCIF, FFI_DEFAULT_ABI, 2, &ffi_type_sint32, argTypes);
+    if(status != FFI_OK)
+    {
+        NSLog(@"Got result %ld from ffi_prep_cif", (long)status);
+        abort();
+    }
+}
+
 - (void)_prepClosureCIF
 {
     ffi_type **argTypes = [self _allocate: sizeof(*argTypes)];
@@ -91,15 +169,7 @@ static void DeallocateClosure(void *closure)
 
 - (void)_prepInnerCIF
 {
-    ffi_type **argTypes = [self _allocate: sizeof(*argTypes)];
-    argTypes[0] = &ffi_type_pointer;
-    argTypes[1] = &ffi_type_sint32;
-    ffi_status status = ffi_prep_cif(&_innerCIF, FFI_DEFAULT_ABI, 2, &ffi_type_sint32, argTypes);
-    if(status != FFI_OK)
-    {
-        NSLog(@"Got result %ld from ffi_prep_cif", (long)status);
-        abort();
-    }
+    [self _prepCIF: &_innerCIF withEncodeString: BlockSig(_block)];
 }
 
 - (void)_prepClosure
