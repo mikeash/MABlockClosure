@@ -166,7 +166,8 @@ static int ArgCount(const char *str)
     } while(0)
     
     SINT(_Bool);
-    INT(char);
+    SINT(signed char);
+    UINT(unsigned char);
     INT(short);
     INT(int);
     INT(long);
