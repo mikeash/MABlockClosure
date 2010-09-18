@@ -241,7 +241,6 @@ static ffi_type *FFIArgForEncode(const char *str)
 {
     if((self = [self init]))
     {
-        NSLog(@"%s", BlockSig(block));
         _allocations = [[NSMutableArray alloc] init];
         _block = block;
         _closure = AllocateClosure();
