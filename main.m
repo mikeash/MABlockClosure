@@ -26,4 +26,9 @@ int main(int argc, char **argv)
     NSRect r = ((NSRect (*)(void))[closure fptr])();
     NSLog(@"%@", NSStringFromRect(r));
     [closure release];
+    
+    block = [^(NSString *s) { return [s stringByAppendingFormat: @" %s", argv[0]]; } copy];
+    NSString *strObj = ((id (*)(id))BlockFptr(block))(@"hello");
+    NSLog(@"%@", strObj);
+    [block release];
 }
