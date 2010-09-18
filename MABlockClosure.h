@@ -9,7 +9,8 @@
     ffi_cif _closureCIF;
     ffi_cif _innerCIF;
     int _closureArgCount;
-    void *_closure;
+    ffi_closure *_closure;
+    void *_closureFptr;
     id _block;
 }
 

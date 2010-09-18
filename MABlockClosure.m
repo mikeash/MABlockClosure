@@ -6,6 +6,8 @@
 #import <sys/mman.h>
 
 
+#define USE_LIBFFI_CLOSURE_ALLOC 0
+
 @implementation MABlockClosure
 
 struct BlockDescriptor
@@ -59,20 +61,29 @@ static void BlockClosure(ffi_cif *cif, void *ret, void **args, void *userdata)
     free(innerArgs);
 }
 
-static void *AllocateClosure(void)
+static void *AllocateClosure(void **codePtr)
 {
+#if USE_LIBFFI_CLOSURE_ALLOC
+    return ffi_closure_alloc(sizeof(ffi_closure), codePtr);
+#else
     ffi_closure *closure = mmap(NULL, sizeof(ffi_closure), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
     if(closure == (void *)-1)
     {
         perror("mmap");
         return NULL;
     }
+    *codePtr = closure;
     return closure;
+#endif
 }
 
 static void DeallocateClosure(void *closure)
 {
+#if USE_LIBFFI_CLOSURE_ALLOC
+    ffi_closure_free(closure);
+#else
     munmap(closure, sizeof(ffi_closure));
+#endif
 }
 
 - (void *)_allocate: (size_t)howmuch
@@ -254,6 +265,14 @@ static int ArgCount(const char *str)
 
 - (void)_prepClosure
 {
+#if USE_LIBFFI_CLOSURE_ALLOC
+    ffi_status status = ffi_prep_closure_loc(_closure, &_closureCIF, BlockClosure, self, _closureFptr);
+    if(status != FFI_OK)
+    {
+        NSLog(@"ffi_prep_closure returned %d", (int)status);
+        abort();
+    }
+#else
     ffi_status status = ffi_prep_closure(_closure, &_closureCIF, BlockClosure, self);
     if(status != FFI_OK)
     {
@@ -266,6 +285,7 @@ static int ArgCount(const char *str)
         perror("mprotect");
         abort();
     }
+#endif
 }
 
 - (id)initWithBlock: (id)block
@@ -274,7 +294,7 @@ static int ArgCount(const char *str)
     {
         _allocations = [[NSMutableArray alloc] init];
         _block = block;
-        _closure = AllocateClosure();
+        _closure = AllocateClosure(&_closureFptr);
         [self _prepClosureCIF];
         [self _prepInnerCIF];
         [self _prepClosure];
@@ -292,7 +312,7 @@ static int ArgCount(const char *str)
 
 - (void *)fptr
 {
-    return _closure;
+    return _closureFptr;
 }
 
 @end
