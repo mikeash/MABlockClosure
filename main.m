@@ -20,4 +20,10 @@ int main(int argc, char **argv)
     char *s = ((char *(*)(void))[closure fptr])();
     NSLog(@"%s", s);
     [closure release];
+    
+    block = ^{ return NSMakeRect(0, 0, 0, 0); };
+    closure = [[MABlockClosure alloc] initWithBlock: block];
+    NSRect r = ((NSRect (*)(void))[closure fptr])();
+    NSLog(@"%@", NSStringFromRect(r));
+    [closure release];
 }

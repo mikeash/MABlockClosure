@@ -98,7 +98,7 @@ static int ArgCount(const char *str)
     return argcount;
 }
 
-static ffi_type *FFIArgForEncode(const char *str)
+- (ffi_type *)_ffiArgForEncode: (const char *)str
 {
     #define SINT(type) do { \
     	if(str[0] == @encode(type)[0]) \
@@ -143,13 +143,26 @@ static ffi_type *FFIArgForEncode(const char *str)
         UINT(unsigned type); \
     } while(0)
     
-    
     #define COND(type, name) do { \
         if(str[0] == @encode(type)[0]) \
             return &ffi_type_ ## name; \
     } while(0)
     
     #define PTR(type) COND(type, pointer)
+    
+    #define STRUCT(structType, ...) do { \
+        if(strncmp(str, @encode(structType), strlen(@encode(structType))) == 0) \
+        { \
+           ffi_type *elementsLocal[] = { __VA_ARGS__, NULL }; \
+           ffi_type **elements = [self _allocate: sizeof(elementsLocal)]; \
+           memcpy(elements, elementsLocal, sizeof(elementsLocal)); \
+            \
+           ffi_type *structType = [self _allocate: sizeof(*structType)]; \
+           structType->type = FFI_TYPE_STRUCT; \
+           structType->elements = elements; \
+           return structType; \
+        } \
+    } while(0)
     
     SINT(_Bool);
     INT(char);
@@ -168,6 +181,14 @@ static ffi_type *FFIArgForEncode(const char *str)
     COND(float, float);
     COND(double, double);
     
+    ffi_type *CGFloatFFI = sizeof(CGFloat) == sizeof(float) ? &ffi_type_float : &ffi_type_double;
+    STRUCT(CGRect, CGFloatFFI, CGFloatFFI, CGFloatFFI, CGFloatFFI);
+    STRUCT(NSRect, CGFloatFFI, CGFloatFFI, CGFloatFFI, CGFloatFFI);
+    STRUCT(CGPoint, CGFloatFFI, CGFloatFFI);
+    STRUCT(NSPoint, CGFloatFFI, CGFloatFFI);
+    STRUCT(CGSize, CGFloatFFI, CGFloatFFI);
+    STRUCT(NSSize, CGFloatFFI, CGFloatFFI);
+    
     NSLog(@"Unknown encode string %s", str);
     abort();
 }
@@ -182,7 +203,7 @@ static ffi_type *FFIArgForEncode(const char *str)
     {
         const char *next = SizeAndAlignment(str, NULL, NULL, NULL);
         if(i >= 0)
-            argTypes[i] = FFIArgForEncode(str);
+            argTypes[i] = [self _ffiArgForEncode: str];
         i++;
         str = next;
     }
@@ -203,7 +224,7 @@ static ffi_type *FFIArgForEncode(const char *str)
         argCount--;
     }
     
-    ffi_status status = ffi_prep_cif(cif, FFI_DEFAULT_ABI, argCount, FFIArgForEncode(str), argTypes);
+    ffi_status status = ffi_prep_cif(cif, FFI_DEFAULT_ABI, argCount, [self _ffiArgForEncode: str], argTypes);
     if(status != FFI_OK)
     {
         NSLog(@"Got result %ld from ffi_prep_cif", (long)status);
