@@ -187,6 +187,8 @@ static int ArgCount(const char *str)
     COND(float, float);
     COND(double, double);
     
+    COND(void, void);
+    
     ffi_type *CGFloatFFI = sizeof(CGFloat) == sizeof(float) ? &ffi_type_float : &ffi_type_double;
     STRUCT(CGRect, CGFloatFFI, CGFloatFFI, CGFloatFFI, CGFloatFFI);
     STRUCT(NSRect, CGFloatFFI, CGFloatFFI, CGFloatFFI, CGFloatFFI);

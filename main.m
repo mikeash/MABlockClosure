@@ -36,4 +36,9 @@ int main(int argc, char **argv)
     closure = [[MABlockClosure alloc] initWithBlock: block];
     ret = ((int (*)(int, int))[closure fptr])(5, 10);
     NSLog(@"%d", ret);
+    
+    block = ^{ NSLog(@"Hello"); };
+    closure = [[MABlockClosure alloc] initWithBlock: block];
+    ((void (*)(void))[closure fptr])();
+    [closure release];
 }
