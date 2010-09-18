@@ -119,14 +119,54 @@ static ffi_type *FFIArgForEncode(const char *str)
         } \
     } while(0)
     
-    #define PTR(type) do { \
-        if(str[0] == @encode(type)[0]) \
-            return &ffi_type_pointer; \
+    #define UINT(type) do { \
+    	if(str[0] == @encode(type)[0]) \
+    	{ \
+    	   if(sizeof(type) == 1) \
+    	       return &ffi_type_uint8; \
+    	   else if(sizeof(type) == 2) \
+    	       return &ffi_type_uint16; \
+    	   else if(sizeof(type) == 4) \
+    	       return &ffi_type_uint32; \
+    	   else if(sizeof(type) == 8) \
+    	       return &ffi_type_uint64; \
+    	   else \
+    	   { \
+    	       NSLog(@"Unknown size for type %s", #type); \
+    	       abort(); \
+    	   } \
+        } \
     } while(0)
     
-    SINT(int);
+    #define INT(type) do { \
+        SINT(type); \
+        UINT(unsigned type); \
+    } while(0)
+    
+    
+    #define COND(type, name) do { \
+        if(str[0] == @encode(type)[0]) \
+            return &ffi_type_ ## name; \
+    } while(0)
+    
+    #define PTR(type) COND(type, pointer)
+    
+    SINT(_Bool);
+    INT(char);
+    INT(short);
+    INT(int);
+    INT(long);
+    INT(long long);
     
     PTR(id);
+    PTR(Class);
+    PTR(SEL);
+    PTR(void *);
+    PTR(char *);
+    PTR(void (*)(void));
+    
+    COND(float, float);
+    COND(double, double);
     
     NSLog(@"Unknown encode string %s", str);
     abort();
