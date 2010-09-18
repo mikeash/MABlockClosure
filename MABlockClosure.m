@@ -29,7 +29,7 @@ struct Block
 
 static void *BlockImpl(id block)
 {
-    return ((void **)block)[2];
+    return ((struct Block *)block)->invoke;
 }
 
 static const char *BlockSig(id blockObj)
