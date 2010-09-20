@@ -1,2 +1,5 @@
 a.out
 *.dSYM
+build
+*.mode1v3
+*.pbxuser

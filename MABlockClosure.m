@@ -5,6 +5,10 @@
 #import <objc/runtime.h>
 #import <sys/mman.h>
 
+#if TARGET_OS_IPHONE
+#import <CoreGraphics/CoreGraphics.h>
+#endif
+
 
 @implementation MABlockClosure
 
@@ -200,11 +204,14 @@ static int ArgCount(const char *str)
     
     ffi_type *CGFloatFFI = sizeof(CGFloat) == sizeof(float) ? &ffi_type_float : &ffi_type_double;
     STRUCT(CGRect, CGFloatFFI, CGFloatFFI, CGFloatFFI, CGFloatFFI);
-    STRUCT(NSRect, CGFloatFFI, CGFloatFFI, CGFloatFFI, CGFloatFFI);
     STRUCT(CGPoint, CGFloatFFI, CGFloatFFI);
-    STRUCT(NSPoint, CGFloatFFI, CGFloatFFI);
     STRUCT(CGSize, CGFloatFFI, CGFloatFFI);
+    
+#if !TARGET_OS_IPHONE
+    STRUCT(NSRect, CGFloatFFI, CGFloatFFI, CGFloatFFI, CGFloatFFI);
+    STRUCT(NSPoint, CGFloatFFI, CGFloatFFI);
     STRUCT(NSSize, CGFloatFFI, CGFloatFFI);
+#endif
     
     NSLog(@"Unknown encode string %s", str);
     abort();

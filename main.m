@@ -4,6 +4,12 @@
 #import "MABlockClosure.h"
 
 
+#if TARGET_OS_IPHONE
+#import <CoreGraphics/CoreGraphics.h>
+#import <UIKit/UIKit.h>
+#define NSStringFromRect(r) NSStringFromCGRect(r)
+#endif
+
 int main(int argc, char **argv)
 {
     [NSAutoreleasePool new];
@@ -21,9 +27,9 @@ int main(int argc, char **argv)
     NSLog(@"%s", s);
     [closure release];
     
-    block = ^{ return NSMakeRect(0, 0, 0, 0); };
+    block = ^{ return CGRectMake(0, 0, 0, 0); };
     closure = [[MABlockClosure alloc] initWithBlock: block];
-    NSRect r = ((NSRect (*)(void))[closure fptr])();
+    CGRect r = ((CGRect (*)(void))[closure fptr])();
     NSLog(@"%@", NSStringFromRect(r));
     [closure release];
     
