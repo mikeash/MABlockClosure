@@ -43,7 +43,7 @@ Note that libffi closures on iOS are *highly experimental* and you should tread 
 
 This libffi fork is located here:
 
-http://github.com/landonf/libffi-ios
+[http://github.com/landonf/libffi-ios](http://github.com/landonf/libffi-ios)
 
 Here are some brief instructions for how to get this fork up and running with MABlockClosure.
 
