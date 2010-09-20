@@ -1,6 +1,17 @@
 
-#import <ffi/ffi.h>
 #import <Foundation/Foundation.h>
+
+
+#if TARGET_OS_IPHONE && TARGET_OS_EMBEDDED
+#define USE_CUSTOM_LIBFFI 1
+#endif
+
+#if USE_CUSTOM_LIBFFI
+#import <ffi.h>
+#define USE_LIBFFI_CLOSURE_ALLOC 1
+#else // use system libffi
+#import <ffi/ffi.h>
+#endif
 
 
 @interface MABlockClosure : NSObject

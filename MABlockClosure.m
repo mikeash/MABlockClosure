@@ -6,8 +6,6 @@
 #import <sys/mman.h>
 
 
-#define USE_LIBFFI_CLOSURE_ALLOC 0
-
 @implementation MABlockClosure
 
 struct BlockDescriptor
