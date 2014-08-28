@@ -2,7 +2,7 @@
 #import <Foundation/Foundation.h>
 
 
-#if TARGET_OS_IPHONE && TARGET_OS_EMBEDDED
+#if (TARGET_OS_IPHONE && TARGET_OS_EMBEDDED) || TARGET_IPHONE_SIMULATOR
 #define USE_CUSTOM_LIBFFI 1
 #endif
 
