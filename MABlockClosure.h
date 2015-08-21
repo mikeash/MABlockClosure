@@ -31,6 +31,10 @@
 
 @end
 
+#ifdef __cplusplus
+extern "C" {
+#endif /// __cplusplus
+
 // convenience function, returns a function pointer
 // whose lifetime is tied to 'block'
 // block MUST BE a heap block (pre-copied)
@@ -40,3 +44,7 @@ void *BlockFptr(id block);
 // copies/autoreleases the block, then returns
 // function pointer associated to it
 void *BlockFptrAuto(id block);
+
+#ifdef __cplusplus
+}
+#endif /// __cplusplus
